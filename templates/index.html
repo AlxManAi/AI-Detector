@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Проверка на ИИ</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Проверка текста на "человечность"</h1>
+        <p>Вставьте текст. Система оценит, насколько он похож на сгенерированный ИИ.</p>
+
+        <form id="checkForm">
+            <textarea id="textInput" name="text" placeholder="Вставьте текст для проверки..." rows="10"></textarea>
+            <button type="submit">Проверить</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('checkForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) return alert('Введите текст!');
+
+            const res = await fetch('/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `text=${encodeURIComponent(text)}`
+            }).then(r => r.json());
+
+            const resultEl = document.getElementById('result');
+            let html = `<p><strong>Длина текста:</strong> ${res.text_length} символов</p>`;
+
+            if (res.ai_score_local !== null) {
+                const color = res.ai_score_local > 50 ? '#d9534f' : '#5cb85c';
+                const status = res.ai_score_local > 50 ? 'Сгенерировано ИИ' : 'Написано человеком';
+                html += `<p><strong>Результат:</strong> <span style="color:${color}; font-weight:bold;">${status}</span></p>`;
+                html += `<p><strong>Уверенность:</strong> ${res.ai_score_local}%</p>`;
+            } else {
+                html += `<p class="error">Ошибка: ${res.error_local}</p>`;
+            }
+
+            resultEl.innerHTML = `<div class="card">${html}</div>`;
+        };
+    </script>
+</body>
+</html>
